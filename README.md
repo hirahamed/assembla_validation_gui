@@ -10,9 +10,12 @@ access_key= "xxxxxxxxxxxxxxxxxxxxxxxxx";
 
 access_secret = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
+
 - Step 2: place this "creds_personal.py" in the same directory where you are cloning this.
 
+
 - Step 3: double click on "run.bat" to run the program.
+
 
 This takes gc code as an input (it should be integer value), and if errors are found, it will write in json file and show the error message as popup.
 
