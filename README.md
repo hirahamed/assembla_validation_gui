@@ -4,11 +4,17 @@ Gui for validating apps in realtime
 
 
 - Step 1: create a file named as "creds_personal.py"
-place your assembla scret keys inside it, for example:
+place your assembla secret keys inside it, for example:
 
 access_key= "xxxxxxxxxxxxxxxxxxxxxxxxx";
 
 access_secret = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+
+-- To create assembla secret keys: go to your assembla:
+-- Now go to profile from settings.
+-- select "API Applications & Sessions", in this tab "Register new personal key".
+-- check the "API access" and "Repository access".
+By following above method you will get your access and secret keys.
 
 
 - Step 2: place this "creds_personal.py" in the same directory where you are cloning this.
