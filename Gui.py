@@ -873,6 +873,8 @@ def validate(data):
 		else:
 			messagebox.showerror(title="Incorrect status", message='Error!! App is not in Status "Pcap done!!"')
 			print('Error!! App is not in Status "Pcap done!!"')
+			error_logs = "Not_performed"
+			return error_logs
 		
 
 
@@ -890,11 +892,14 @@ def validate_on_click():
 			# print(data)
 			result = validate(data)
 			if result:
-				messagebox.showwarning(title="Errors found", message="Errors Found in your app!! please check the saved json.")
-				print("Errors found...")
-				print("Done processing...")
-				with open(gc+'_errors.json', 'w') as outfile:
-					json.dump(result, outfile,indent=4)
+				if result != "Not_performed":
+					messagebox.showwarning(title="Errors found", message="Errors Found in your app!! please check the saved json.")
+					print("Errors found...")
+					print("Done processing...")
+					with open(gc+'_errors.json', 'w') as outfile:
+						json.dump(result, outfile,indent=4)
+				else:
+					print("Assembla Status Error!")
 			else:		
 				messagebox.showinfo(title="No Errors", message="Congratulations, No Errors found...")
 				print("Congratulations, No Errors found...")
