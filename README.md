@@ -2,6 +2,16 @@
 Gui for validating apps in realtime
 
 
+Initial step:
+install the below modules, run below commands in cmd:
+
+-- pip install tkinter
+
+-- pip install assembla
+
+-- pip install requests
+
+
 
 - Step 1: create a file named as "creds_personal.py"
 place your assembla secret keys inside it, for example:
