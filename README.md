@@ -11,9 +11,13 @@ access_key= "xxxxxxxxxxxxxxxxxxxxxxxxx";
 access_secret = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
 -- To create assembla secret keys: go to your assembla:
+
 -- Now go to profile from settings.
+
 -- select "API Applications & Sessions", in this tab "Register new personal key".
+
 -- check the "API access" and "Repository access".
+
 By following above method you will get your access and secret keys.
 
 
