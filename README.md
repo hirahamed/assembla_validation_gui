@@ -5,6 +5,7 @@ Gui for validating apps in realtime
 
 - Step 1: create a file named as "creds_personal.py"
 place your assembla scret keys inside it, for example:
+
 access_key= "xxxxxxxxxxxxxxxxxxxxxxxxx";
 
 access_secret = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
