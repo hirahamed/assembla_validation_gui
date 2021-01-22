@@ -1,12 +1,12 @@
 # assembla_validation_gui
 Gui for validating apps in realtime
 
+Note: after performing the complete app and including the attachements then run this program.
 
-Initial step:
+- Initial step:
 install the below modules, run below commands in cmd:
 
 pip install assembla
-
 
 
 
