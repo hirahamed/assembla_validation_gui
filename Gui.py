@@ -33,6 +33,7 @@ def assembla_data_to_json(input_gc, my_space, my_headers):
 			attachment_api_get = api
 			api_response = requests.get(attachment_api_get, headers=my_headers)
 			response = api_response.text
+			
 			if len(response) > 0: 
 				attachment_list_json = json.loads(api_response.text)
 				for attachment in attachment_list_json:
@@ -40,7 +41,9 @@ def assembla_data_to_json(input_gc, my_space, my_headers):
 					if name[-1] == 'pcap' or name[-1] == 'PCAP':
 						attachments_temp.append(attachment_list_json)
 						attachement_names.append(attachment['name'])
-        
+
+			
+	
             # get assembla data through assembla wrapper
 			assembla_data[ticket['summary']] = {  'Ticket_number': ticket_number, 'Status': ticket['status'] ,'custom_fields': ticket['custom_fields'], 'Attachments_count': len(attachments_temp), 'Attachments_list':	attachement_names }
 			return assembla_data
@@ -850,6 +853,7 @@ def validate(data):
 			# print(overall_activities_count)
 			# print(value["Attachments_count"])
 			# print(app_name)
+			
 			if overall_activities_count  == value["Attachments_count"]:
 				attachement_status = ""
 			else:
@@ -865,13 +869,16 @@ def validate(data):
 			
 
 			print("Validating data... Please wait!!")
+		else:
+			messagebox.showerror(title="Incorrect status", message='Error!! App is not in Status "Pcap done!!"')
+			print('Error!! App is not in Status "Pcap done!!"')
 		return error_logs
 
 
 def validate_on_click():
 	gc = txt.get()
 
-	if type(int(gc)) == int:
+	if type(int(gc.strip())) == int:
 		try:
 			# To get data from assembla
 			space_name='Granular Controls'
