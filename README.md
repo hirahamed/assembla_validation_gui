@@ -1,7 +1,8 @@
 # assembla_validation_gui
 Gui for validating apps in realtime
 
-Note: after performing the complete app and including the attachements (it means after "pcap done" status, then you can run this program.)
+```diff
+- Note: after performing the complete app and including the attachements (it means after "pcap done" status, then you can run this program.)
 
 - Initial step:
 install the below modules, run below commands in cmd:
