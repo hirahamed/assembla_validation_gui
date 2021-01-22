@@ -869,10 +869,11 @@ def validate(data):
 			
 
 			print("Validating data... Please wait!!")
+			return error_logs
 		else:
 			messagebox.showerror(title="Incorrect status", message='Error!! App is not in Status "Pcap done!!"')
 			print('Error!! App is not in Status "Pcap done!!"')
-		return error_logs
+		
 
 
 def validate_on_click():
