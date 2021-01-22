@@ -5,11 +5,8 @@ Gui for validating apps in realtime
 Initial step:
 install the below modules, run below commands in cmd:
 
-pip install tkinter
-
 pip install assembla
 
-pip install requests
 
 
 
