@@ -35,7 +35,7 @@ By following above method you will get your access and secret keys.
 - Step 3: double click on "run.bat" to run the program.
 
 
-This takes gc code as an input (it should be integer value), and if errors are found, it will write in json file and show the error message as popup.
++ This takes gc code as an input (it should be integer value), and if errors are found, it will write in json file and show the error message as popup.
 
 The validation code includes the following validations for assembla inputs:
 
