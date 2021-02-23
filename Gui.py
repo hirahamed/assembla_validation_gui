@@ -38,7 +38,7 @@ def assembla_data_to_json(input_gc, my_space, my_headers):
 				attachment_list_json = json.loads(api_response.text)
 				for attachment in attachment_list_json:
 					name = attachment['name'].split('.')
-					if name[-1] == 'pcap' or name[-1] == 'PCAP':
+					if name[-1] == 'pcap' or name[-1] == 'PCAP' or name[-1] == 'saz' or name[-1] == 'SAZ':
 						attachments_temp.append(attachment_list_json)
 						attachement_names.append(attachment['name'])
 
@@ -56,10 +56,23 @@ def initial_validation(data, initial_errors):
 		initial_errors[counter] = "HTTP version not filled"
 		counter += 1
 		
-
-	if not data['custom_fields']['Personal'] and not data['custom_fields']['Corporate']:
-		initial_errors[counter] = "Personal and Corporate both are empty, one of them should be filled"
+		
+	if (data['custom_fields']['Personal Placeholder'] == '' or data['custom_fields']['Personal Placeholder'] == None) and (data['custom_fields']['Corporate Placeholder'] == '' or data['custom_fields']['Corporate Placeholder'] == None):
+	#if not data['custom_fields']['Personal'] and not data['custom_fields']['Corporate']:
+		initial_errors[counter] = "Personal and Corporate Placeholders both are empty, one of them should be filled"
 		counter += 1
+	
+	if (data['custom_fields']['Personal Placeholder'] != '' or data['custom_fields']['Personal Placeholder'] == None):
+		if data['custom_fields']['Personal Placeholder'] != 'NA':
+			if str(data['custom_fields']['Personal Info']).strip() == '' and str(data['custom_fields']['Personal Info']).strip() == None and str(data['custom_fields']['Personal Info']).strip().lower() == "na":
+				initial_errors[counter] = "Personal Info is not correctly filled"
+				counter += 1	
+
+	if (data['custom_fields']['Corporate Placeholder'] != '' or data['custom_fields']['Corporate Placeholder'] == None):
+		if data['custom_fields']['Corporate Placeholder'] != 'NA':
+			if str(data['custom_fields']['Corporate Info']).strip() == '' and str(data['custom_fields']['Corporate Info']).strip() == None and str(data['custom_fields']['Corporate Info']).strip().lower() == "na":
+				initial_errors[counter] = "Corporate Info is not correctly filled"
+				counter += 1	
 
 	if not data['custom_fields']['_Product_id']:
 		initial_errors[counter] = "Product ID is missing"
@@ -522,7 +535,7 @@ def attachment_names_validation(attachments_names, activity_name, app_ticket, ac
 	validate_pcap = ''
 	if activity_count == 0:
 		validate_pcap = str(app_ticket)+"_"+activity_name+"-"+str(activity_count)
-		if (validate_pcap+".pcap" in attachments_names) or (validate_pcap+".PCAP" in attachments_names):
+		if (validate_pcap+".pcap" in attachments_names) or (validate_pcap+".PCAP" in attachments_names) or (validate_pcap+".saz" in attachments_names) or (validate_pcap+".SAZ" in attachments_names):
 			pass
 			# lst.append("Correct fileName")
 		else:
@@ -532,7 +545,7 @@ def attachment_names_validation(attachments_names, activity_name, app_ticket, ac
 		for i in range(activity_count):
 			validate_pcap = str(app_ticket)+"_"+activity_name+"-"+str(i)
 			# print(validate_pcap)
-			if (validate_pcap+".pcap" in attachments_names) or (validate_pcap+".PCAP" in attachments_names):
+			if (validate_pcap+".pcap" in attachments_names) or (validate_pcap+".PCAP" in attachments_names) or (validate_pcap+".saz" in attachments_names) or (validate_pcap+".SAZ" in attachments_names):
 				# lst.append("Correct fileName")
 				pass
 			else:
@@ -751,13 +764,13 @@ def validate(data):
 				errors_dict['UPLOAD'] =upload_errors
 
 			if upload_multiple_methods_err:
-				errors_dict['UPLOAD-MULTIPLE-METHODS'] =upload_multiple_methods_err
+				errors_dict['UPLOAD-MULTIPLE-METHODS'] = upload_multiple_methods_err
 
 			if upload_multiple_methods_err_lst:
-				errors_dict['UPLOAD-MULTIPLE-METHODS-VALIDATION'] =upload_multiple_methods_err_lst
+				errors_dict['UPLOAD-MULTIPLE-METHODS-VALIDATION'] = upload_multiple_methods_err_lst
 
 			if upload_multiple_values_err:
-				errors_dict['UPLOAD-MULTIPLE-VALUES'] =upload_multiple_values_err
+				errors_dict['UPLOAD-MULTIPLE-VALUES'] = upload_multiple_values_err
 
 			if len(upload_file_error) > 0:
 				errors_dict['UPLOAD-Filename-Error'] = upload_file_error
@@ -766,13 +779,13 @@ def validate(data):
 				errors_dict['DOWNLOAD'] =download_errors
 
 			if download_multiple_methods_err:
-				errors_dict['DOWNLOAD-MULTIPLE-METHODS'] =download_multiple_methods_err
+				errors_dict['DOWNLOAD-MULTIPLE-METHODS'] = download_multiple_methods_err
 
 			if download_multiple_methods_err_lst:
-				errors_dict['DOWNLOAD-MULTIPLE-METHODS-VALIDATION'] =download_multiple_methods_err_lst
+				errors_dict['DOWNLOAD-MULTIPLE-METHODS-VALIDATION'] = download_multiple_methods_err_lst
 
 			if download_multiple_values_err:
-				errors_dict['DOWNLOAD-MULTIPLE-VALUES'] =download_multiple_values_err
+				errors_dict['DOWNLOAD-MULTIPLE-VALUES'] = download_multiple_values_err
 
 			if len(download_file_error) > 0:
 				errors_dict['DOWNLOAD-Filename-Error'] = download_file_error
@@ -879,39 +892,76 @@ def validate(data):
 
 
 def validate_on_click():
-	gc = txt.get()
-
-	if type(int(gc.strip())) == int:
-		try:
-			# To get data from assembla
-			space_name='Granular Controls'
-			my_space= assembla.spaces(name=space_name)[0]
-			#print(len(my_space.tickets()))
-			#below method call to hit the assembla api
-			data = assembla_data_to_json(gc, my_space, my_headers)
-			# print(data)
-			result = validate(data)
-			if result:
-				if result != "Not_performed":
-					messagebox.showwarning(title="Errors found", message="Errors Found in your app!! please check the saved json.")
-					print("Errors found...")
-					print("Done processing...")
-					with open(gc+'_errors.json', 'w') as outfile:
-						json.dump(result, outfile,indent=4)
-				else:
-					print("Assembla Status Error!")
-			else:		
-				messagebox.showinfo(title="No Errors", message="Congratulations, No Errors found...")
-				print("Congratulations, No Errors found...")
-				print("Done processing...")
-			# break
-		except:
-			print("Connection refused by the server..")
-			time.sleep(5)
-			print("Was a nice sleep, now let me continue...")
-			# continue
+	gc = txt.get().strip()
+	if ',' in gc:
+		splitted_txt = gc.split(",")
+		for single_value in splitted_txt:
+			if type(int(single_value.strip())) == int:
+				try:
+					# To get data from assembla
+					space_name='Granular Controls'
+					my_space= assembla.spaces(name=space_name)[0]
+					#print(len(my_space.tickets()))
+					#below method call to hit the assembla api
+					data = assembla_data_to_json(single_value, my_space, my_headers)
+					# print(data)
+					result = validate(data)
+					if result:
+						if result != "Not_performed":
+							messagebox.showwarning(title="Errors found", message="Errors Found in your app!! please check the saved json.")
+							print("Errors found...")
+							print("Done processing...")
+							with open(single_value+'_errors.json', 'w') as outfile:
+								json.dump(result, outfile,indent=4)
+						else:
+							print("Assembla Status Error!")
+					else:		
+						messagebox.showinfo(title="No Errors", message="Congratulations, No Errors found...")
+						print("Congratulations, No Errors found...")
+						print("Done processing...")
+					# break
+				except:
+					print("Connection refused by the server..")
+					time.sleep(5)
+					print("Was a nice sleep, now let me continue...")
+					# continue
+			else:
+				messagebox.showerror(title="Incorrect Value", message="Incorrect GC-Code, please enter integer!")
+	
 	else:
-		messagebox.showerror(title="Incorrect Value", message="Incorrect GC-Code, please enter integer!")
+		if type(int(gc.strip())) == int:
+			try:
+				# To get data from assembla
+				space_name='Granular Controls'
+				my_space= assembla.spaces(name=space_name)[0]
+				#print(len(my_space.tickets()))
+				#below method call to hit the assembla api
+				data = assembla_data_to_json(gc, my_space, my_headers)
+				# print(data)
+				result = validate(data)
+				if result:
+					if result != "Not_performed":
+						messagebox.showwarning(title="Errors found", message="Errors Found in your app!! please check the saved json.")
+						print("Errors found...")
+						print("Done processing...")
+						with open(gc+'_errors.json', 'w') as outfile:
+							json.dump(result, outfile,indent=4)
+					else:
+						print("Assembla Status Error!")
+				else:		
+					messagebox.showinfo(title="No Errors", message="Congratulations, No Errors found...")
+					print("Congratulations, No Errors found...")
+					print("Done processing...")
+				# break
+			except:
+				print("Connection refused by the server..")
+				time.sleep(5)
+				print("Was a nice sleep, now let me continue...")
+				# continue
+		else:
+			messagebox.showerror(title="Incorrect Value", message="Incorrect GC-Code, please enter integer!")
+
+
 
 
 
@@ -940,27 +990,4 @@ txt.grid(column=1, row=1,padx=5, pady=5)
 btn = Button(window, text="Validate", command=validate_on_click)
 btn.grid(column=1, row=2, padx=5, pady=5)
 window.mainloop()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
