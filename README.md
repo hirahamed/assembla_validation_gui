@@ -4,6 +4,8 @@ Gui for validating apps in realtime
 ```diff
 - Note: after performing the complete app and including the attachements (it means after "pcap done" status, then you can run this program.)
 - Note: If you want to validate multiple apps at a time then use comma as a separator between gc-codes. eg. 221, 223, 445 and for single apps just write for e.g. 332 
+- Note: New feature added, To press validate button, you can also use Enter key in your keyboard.
+
 
 - Initial step:
 install the below modules, run below commands in cmd:
