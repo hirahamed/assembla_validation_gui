@@ -69,3 +69,9 @@ Below is the list of validations it entertains:
 
 * Attachments counts should be same as the activities performed.
 
+* Asterik should not be present in between text other than uri path.
+
+* Starting space checking.
+
+* Black listing words checking.
+
