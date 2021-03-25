@@ -11,11 +11,13 @@ import re
 import time
 
 
+
 def assembla_data_to_json(input_gc, my_space, my_headers):
 	count = 0
 	ticket_ls = []
 	assembla_data = {}
-	print("Please wait....")
+	
+	print("\nPlease wait....")
 	print("Working for GC-",input_gc)
 	for ticket in my_space.tickets():
 		# print(ticket)
@@ -55,7 +57,8 @@ def initial_validation(data, initial_errors):
 	if not data['custom_fields']['HTTP-version']:
 		initial_errors[counter] = "HTTP version not filled"
 		counter += 1
-		
+		# print("key", app_name)
+		# break
 		
 	if (data['custom_fields']['Personal Placeholder'] == '' or data['custom_fields']['Personal Placeholder'] == None) and (data['custom_fields']['Corporate Placeholder'] == '' or data['custom_fields']['Corporate Placeholder'] == None):
 	#if not data['custom_fields']['Personal'] and not data['custom_fields']['Corporate']:
@@ -73,6 +76,14 @@ def initial_validation(data, initial_errors):
 			if str(data['custom_fields']['Corporate Info']).strip() == '' and str(data['custom_fields']['Corporate Info']).strip() == None and str(data['custom_fields']['Corporate Info']).strip().lower() == "na":
 				initial_errors[counter] = "Corporate Info is not correctly filled"
 				counter += 1	
+	
+	if str(data['custom_fields']['username']).strip() == '' or str(data['custom_fields']['password']).strip() == '':
+		initial_errors[counter] = "Username or password cannot be empty."
+		counter += 1
+	
+	if str(data['custom_fields']['Web URL']).strip() == '' :
+		initial_errors[counter] = "Web URL cannot be empty."
+		counter += 1
 
 	if not data['custom_fields']['_Product_id']:
 		initial_errors[counter] = "Product ID is missing"
@@ -80,6 +91,27 @@ def initial_validation(data, initial_errors):
 
 	return initial_errors
 
+def asterik_check(search_string, original_string):
+
+	res = [i.start() for i in re.finditer(search_string, original_string)] 
+	last_char = len(original_string) - 1
+
+	
+	if 0 in res:
+		index = res.index(0)
+		res.pop(index)
+
+
+
+	if last_char in res:
+		index = res.index(last_char)
+		res.pop(index)
+
+	
+	if len(res) > 0:
+		return True
+	else:
+		return False
 
 
 def login_and_login_fail_validation(data, activity_name, host_pattern, uri_pattern, login_loginFail_errors, activity_methods):
@@ -104,6 +136,20 @@ def login_and_login_fail_validation(data, activity_name, host_pattern, uri_patte
 				# print(data['custom_fields'][activity_name+'_req-host'])
 				login_loginFail_errors[counter] = " Request host value seems to be incorrect"
 				counter +=1
+			
+			if str(data['custom_fields'][activity_name+'_req-host']).startswith(" "):
+				login_loginFail_errors[counter] = " Request host starts with whitespace, please remove it."
+				counter +=1
+
+			if any(x in str(data['custom_fields'][activity_name+'_req-host']).lower() for x in blacklist_words):
+				login_loginFail_errors[counter] = " Error: Some of the blacklisted words are present in Request host"
+				counter +=1
+
+			check_host = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_req-host']))
+			if check_host == True :
+				login_loginFail_errors[counter] = " Error: Asterik cannot be present in between request host value, please fix it"
+				counter +=1
+
 		else:
 			login_loginFail_errors[counter] = " Host is missing"
 			counter +=1
@@ -114,17 +160,99 @@ def login_and_login_fail_validation(data, activity_name, host_pattern, uri_patte
 				# print(data['custom_fields'][activity_name+'_req-uri-path'])
 				login_loginFail_errors[counter] = " Request uri path value seems to be incorrect or starting '/' is missing(add /) or have space in starting(remove space)"
 				counter +=1
-		
+			
+			if str(data['custom_fields'][activity_name+'_req-uri-path']).startswith(" "):
+				login_loginFail_errors[counter] = " Request uri starts with whitespace, please remove it."
+				counter +=1
+
+
+			if any(x in str(data['custom_fields'][activity_name+'_req-uri-path']).lower() for x in blacklist_words):
+				login_loginFail_errors[counter] = " Error: Some of the blacklisted words are present in Request uri"
+				counter +=1
+
+
+		if data['custom_fields'][activity_name+'_req-params']:
+			if '|' in data['custom_fields'][activity_name+'_req-params']:
+				login_loginFail_errors[counter] = ' Error: Request params has pipe symbol, please replace it with comma'
+				counter +=1
+
+			if str(data['custom_fields'][activity_name+'_req-params']).startswith(" "):
+				login_loginFail_errors[counter] = " Request params starts with whitespace, please remove it."
+				counter +=1
+
+			if any(x in str(data['custom_fields'][activity_name+'_req-params']).lower() for x in blacklist_words):
+				login_loginFail_errors[counter] = " Error: Some of the blacklisted words are present in Request params"
+				counter +=1
+
+			if ',' in data['custom_fields'][activity_name+'_req-params']:
+				req_params_comma_splitter = data['custom_fields'][activity_name+'_req-params'].split(",")
+				for req_params_comma_split in req_params_comma_splitter:
+					check_params  = asterik_check(r"\*",str(req_params_comma_split))
+					if check_params == True:
+						login_loginFail_errors[counter] = " Error: Asterik cannot be present in between request params value, please fix it"
+						counter +=1
+
+			else:
+				check_params  = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_req-params']))
+				if check_params == True:
+					login_loginFail_errors[counter] = " Error: Asterik cannot be present in between request params value, please fix it"
+					counter +=1
+
 		if data['custom_fields'][activity_name+'_req-headers']:
 			if '|' in data['custom_fields'][activity_name+'_req-headers']:
 				login_loginFail_errors[counter] = ' Error: Request header has pipe symbol, please replace it with comma'
 				counter +=1
+
+			if str(data['custom_fields'][activity_name+'_req-headers']).startswith(" "):
+				login_loginFail_errors[counter] = " Request header starts with whitespace, please remove it."
+				counter +=1
+	
+			if any(x in str(data['custom_fields'][activity_name+'_req-headers']).lower() for x in blacklist_words):
+				login_loginFail_errors[counter] = " Error: Some of the blacklisted words are present in Request header"
+				counter +=1
+
+			if "," in data['custom_fields'][activity_name+'_req-headers']:
+				req_head_comma_splitter = data['custom_fields'][activity_name+'_req-headers'].split(",")
+
+				for req_head_comma_split in req_head_comma_splitter:
+					check_req_head  = asterik_check(r"\*",str(req_head_comma_split))
+					if check_req_head == True:
+						login_loginFail_errors[counter] = " Error: Asterik cannot be present in between request header value, please fix it"
+						counter +=1
+
+			else:
+				check_req_head  = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_req-headers']))
+				if check_req_head == True:
+					login_loginFail_errors[counter] = " Error: Asterik cannot be present in between request header value, please fix it"
+					counter +=1
 
 
 		if data['custom_fields'][activity_name+'_req-payload']:
 			if '|' in data['custom_fields'][activity_name+'_req-payload']:
 				login_loginFail_errors[counter] = ' Error: Request payload has pipe symbol, please replace it with comma'
 				counter +=1
+
+			if str(data['custom_fields'][activity_name+'_req-payload']).startswith(" "):
+				login_loginFail_errors[counter] = " Request payload starts with whitespace, please remove it."
+				counter +=1
+
+			if any(x in str(data['custom_fields'][activity_name+'_req-payload']).lower() for x in blacklist_words):
+				login_loginFail_errors[counter] = " Error: Some of the blacklisted words are present in Request payload"
+				counter +=1
+
+			if ',' in data['custom_fields'][activity_name+'_req-payload']:
+				req_pay_comma_splitter = data['custom_fields'][activity_name+'_req-payload'].split(",")
+				for req_pay_comma_split in req_pay_comma_splitter:
+					check_req_pay = asterik_check(r"\*",str(req_pay_comma_split))
+					if check_req_pay == True:
+						login_loginFail_errors[counter] = " Error: Asterik cannot be present in between request payload value, please fix it"
+						counter +=1
+
+			else:
+				check_req_pay = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_req-payload']))
+				if check_req_pay == True:
+					login_loginFail_errors[counter] = " Error: Asterik cannot be present in between request payload value, please fix it"
+					counter +=1
 
 		if data['custom_fields'][activity_name+'_resp-header']:
 			
@@ -133,10 +261,56 @@ def login_and_login_fail_validation(data, activity_name, host_pattern, uri_patte
 				login_loginFail_errors[counter] = ' Error: Response header has pipe symbol, please replace it with comma'
 				counter +=1
 
+			if str(data['custom_fields'][activity_name+'_resp-header']).startswith(" "):
+				login_loginFail_errors[counter] = " Response header starts with whitespace, please remove it."
+				counter +=1
+
+			if any(x in str(data['custom_fields'][activity_name+'_resp-header']).lower() for x in blacklist_words):
+				login_loginFail_errors[counter] = " Error: Some of the blacklisted words are present in Response header"
+				counter +=1
+
+			if ',' in data['custom_fields'][activity_name+'_resp-header']:
+				resp_header_comma_splitter = data['custom_fields'][activity_name+'_resp-header'].split(",")
+				for resp_header_comma_split in resp_header_comma_splitter:
+					check_res_head = asterik_check(r"\*",str(resp_header_comma_split))
+					if check_res_head == True:
+						login_loginFail_errors[counter] = " Error: Asterik cannot be present in between response head value, please fix it"
+						counter +=1
+
+			else:
+				check_res_head = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_resp-header']))
+				if check_res_head == True:
+					login_loginFail_errors[counter] = " Error: Asterik cannot be present in between response head value, please fix it"
+					counter +=1
+
+
+
 		if data['custom_fields'][activity_name+'_resp-payload']:
 			if '|' in data['custom_fields'][activity_name+'_resp-payload']:
 				login_loginFail_errors[counter] = ' Error: Response payload has pipe symbol, please replace it with comma'
 				counter +=1
+
+			if str(data['custom_fields'][activity_name+'_resp-payload']).startswith(" "):
+				login_loginFail_errors[counter] = " Response payload starts with whitespace, please remove it."
+				counter +=1
+
+			if any(x in str(data['custom_fields'][activity_name+'_resp-payload']).lower() for x in blacklist_words):
+				login_loginFail_errors[counter] = " Error: Some of the blacklisted words are present in Response payload"
+				counter +=1
+
+			if ',' in data['custom_fields'][activity_name+'_resp-payload']:
+				resp_payload_comma_splitter = data['custom_fields'][activity_name+'_resp-payload'].split(",")
+				for resp_payload_comma_split in resp_payload_comma_splitter:
+					check_res_pay = asterik_check(r"\*",str(resp_payload_comma_split))
+					if check_res_pay == True:
+						login_loginFail_errors[counter] = " Error: Asterik cannot be present in between response payload value, please fix it"
+						counter +=1
+
+			else:
+				check_res_pay = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_resp-payload']))
+				if check_res_pay == True:
+					login_loginFail_errors[counter] = " Error: Asterik cannot be present in between response payload value, please fix it"
+					counter +=1
 
 		if  uri_pattern.match(data['custom_fields'][activity_name+'_req-headers']):
 			login_loginFail_errors[counter] = ' Request header value seems to be incorrect (found same pattern as uri path)'
@@ -181,13 +355,18 @@ def login_and_login_fail_validation(data, activity_name, host_pattern, uri_patte
 			not data['custom_fields'][activity_name+'_req-payload'] and not data['custom_fields'][activity_name+'_resp-header'] and \
 			not data['custom_fields'][activity_name+'_resp-payload']:
 			pass
-
+			# print(app_name)
+			# print("all empty")
 		else:
 			login_loginFail_errors[counter] = "Request method is None/NA but all fields are not empty"
 			counter += 1
-
+			# print(login_loginFail_errors)
+			# print("app name: ", app_name)
+			# # break
+			# pass
 	
 	return login_loginFail_errors, activity_present
+
 
 
 def login_and_login_fail_depth(data, activity_name, params_depth_lst):
@@ -248,6 +427,25 @@ def logout_validation(data, activity_name, host_pattern, uri_pattern, logout_err
 				# print(data['custom_fields'][activity_name+'_req-host'])
 				logout_errors[counter] = " Request host value seems to be incorrect"
 				counter +=1
+
+			if '|' in data['custom_fields'][activity_name+'_req-host']:
+				# print(data['custom_fields'][activity_name+'_resp-header'])
+				logout_errors[counter] =  ' Error: Request host has pipe symbol, please replace it with comma'
+				counter +=1
+
+			if any(x in str(data['custom_fields'][activity_name+'_req-host']).lower() for x in blacklist_words):
+				logout_errors[counter] = " Error: Some of the blacklisted words are presentin Request host"
+				counter +=1
+
+			if str(data['custom_fields'][activity_name+'_req-host']).startswith(" "):
+				logout_errors[counter] =  " Request host starts with whitespace, please remove it."
+				counter +=1
+
+			check_host = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_req-host']))
+			if check_host == True :
+				logout_errors[counter] = " Error: Asterik cannot be present in between request host value, please fix it"
+				counter +=1
+
 		else:
 			logout_errors[counter] = " Host is missing"
 			counter +=1
@@ -262,7 +460,49 @@ def logout_validation(data, activity_name, host_pattern, uri_pattern, logout_err
 				# print(data['custom_fields'][activity_name+'_req-uri-path'])
 				logout_errors[counter] = " Request uri path value seems to be incorrect or starting '/' is missing(add /) or have space in starting(remove space)"
 				counter +=1
+
+			if any(x in str(data['custom_fields'][activity_name+'_req-uri-path']).lower() for x in blacklist_words):
+				logout_errors[counter] = " Error: Some of the blacklisted words are present in Request uri"
+				counter +=1
+			
+			if '|' in data['custom_fields'][activity_name+'_req-uri-path']:
+				# print(data['custom_fields'][activity_name+'_resp-header'])
+				logout_errors[counter] =  ' Error: Request uri has pipe symbol, please replace it with comma'
+				counter +=1
+
+			if str(data['custom_fields'][activity_name+'_req-uri-path']).startswith(" "):
+				logout_errors[counter] =  " Request uri starts with whitespace, please remove it."
+				counter +=1
 		
+		if data['custom_fields'][activity_name+'_req-params']:
+			if '|' in data['custom_fields'][activity_name+'_req-params']:
+				# print(data['custom_fields'][activity_name+'_resp-header'])
+				logout_errors[counter] =  ' Error: Request params has pipe symbol, please replace it with comma'
+				counter +=1
+
+			if str(data['custom_fields'][activity_name+'_req-params']).startswith(" "):
+				logout_errors[counter] =  " Request params starts with whitespace, please remove it."
+				counter +=1
+
+
+			if any(x in str(data['custom_fields'][activity_name+'_req-params']).lower() for x in blacklist_words):
+				logout_errors[counter] = " Error: Some of the blacklisted words are present in Request params"
+				counter +=1
+
+			if ',' in data['custom_fields'][activity_name+'_req-params']:
+				req_params_comma_splitter = data['custom_fields'][activity_name+'_req-params'].split(",")
+				for req_params_comma_split in req_params_comma_splitter:
+					check_req_params = asterik_check(r"\*",str(req_params_comma_split))
+					if check_req_params == True :
+						logout_errors[counter] = " Error: Asterik cannot be present in between request params value, please fix it"
+						counter +=1
+
+			else:
+				check_req_params = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_req-params']))
+				if check_req_params == True :
+					logout_errors[counter] = " Error: Asterik cannot be present in between request params value, please fix it"
+					counter +=1
+
 
 		if data['custom_fields'][activity_name+'_response']:
 			# print(app_name)
@@ -270,13 +510,70 @@ def logout_validation(data, activity_name, host_pattern, uri_pattern, logout_err
 			counter +=1
 			# print(login_loginFail_errors)
 
-		if  uri_pattern.match(data['custom_fields'][activity_name+'_req-headers']):
-			logout_errors[counter] = ' Request header value seems to be incorrect (found same pattern as uri path)'
-			counter +=1
+		if data['custom_fields'][activity_name+'_req-headers']:
+			if  uri_pattern.match(data['custom_fields'][activity_name+'_req-headers']):
+				logout_errors[counter] = ' Request header value seems to be incorrect (found same pattern as uri path)'
+				counter +=1
+						
+			if '|' in data['custom_fields'][activity_name+'_req-headers']:
+				# print(data['custom_fields'][activity_name+'_resp-header'])
+				logout_errors[counter] =  ' Error: Request header has pipe symbol, please replace it with comma'
+				counter +=1
 
-		if  uri_pattern.match(data['custom_fields'][activity_name+'_req-payload']):
-			logout_errors[counter] = ' Request header value seems to be incorrect (found same pattern as uri path)'
-			counter +=1
+			if str(data['custom_fields'][activity_name+'_req-headers']).startswith(" "):
+				logout_errors[counter] =  " Request header starts with whitespace, please remove it."
+				counter +=1
+
+
+			if any(x in str(data['custom_fields'][activity_name+'_req-headers']).lower() for x in blacklist_words):
+				logout_errors[counter] = " Error: Some of the blacklisted words are present in Request header"
+				counter +=1
+
+			if ',' in data['custom_fields'][activity_name+'_req-headers']:
+				req_header_comma_splitter = data['custom_fields'][activity_name+'_req-headers'].split(",")
+				for req_header_comma_split in req_header_comma_splitter:
+					check_req_head = asterik_check(r"\*",str(req_header_comma_split))
+					if check_req_head == True :
+						logout_errors[counter] = " Error: Asterik cannot be present in between request header value, please fix it"
+						counter +=1
+
+
+			else:
+				check_req_head = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_req-headers']))
+				if check_req_head == True :
+					logout_errors[counter] = " Error: Asterik cannot be present in between request header value, please fix it"
+					counter +=1
+
+		if data['custom_fields'][activity_name+'_req-payload']:
+			if  uri_pattern.match(data['custom_fields'][activity_name+'_req-payload']):
+				logout_errors[counter] = ' Request payload value seems to be incorrect (found same pattern as uri path)'
+				counter +=1
+
+			if '|' in data['custom_fields'][activity_name+'_req-payload']:
+				# print(data['custom_fields'][activity_name+'_resp-header'])
+				logout_errors[counter] =  ' Error: Request payload has pipe symbol, please replace it with comma'
+				counter +=1
+
+			if str(data['custom_fields'][activity_name+'_req-payload']).startswith(" "):
+				logout_errors[counter] =  " Request payload starts with whitespace, please remove it."
+				counter +=1
+
+			if any(x in str(data['custom_fields'][activity_name+'_req-payload']).lower() for x in blacklist_words):
+				logout_errors[counter] = " Error: Some of the blacklisted words are present in Request payload"
+				counter +=1
+
+			if ',' in str(data['custom_fields'][activity_name+'_req-payload']):
+				req_payload_comma_splitter = data['custom_fields'][activity_name+'_req-payload'].split(",")
+				for req_payload_comma_split in req_payload_comma_splitter:
+					check_req_pay = asterik_check(r"\*",str(req_payload_comma_split))
+					if check_req_pay == True :
+						logout_errors[counter] = " Error: Asterik cannot be present in between request payload value, please fix it"
+						counter +=1
+			else:
+				check_req_pay = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_req-payload']))
+				if check_req_pay == True :
+					logout_errors[counter] = " Error: Asterik cannot be present in between request payload value, please fix it"
+					counter +=1
 
 
 	if (data['custom_fields'][activity_name+'_req-method'] == 'None') or (data['custom_fields'][activity_name+'_req-method'] == ''):
@@ -289,7 +586,8 @@ def logout_validation(data, activity_name, host_pattern, uri_pattern, logout_err
 			not data['custom_fields'][activity_name+'_req-params'] and not data['custom_fields'][activity_name+'_req-headers'] and \
 			not data['custom_fields'][activity_name+'_req-payload'] and not data['custom_fields'][activity_name+'_response']:
 			pass
-		
+			# print(app_name)
+			# print("all empty")
 		else:
 			logout_errors[counter] = "Request method is None but all fields are not empty"
 			counter += 1
@@ -315,37 +613,274 @@ def other_Acitivies_validation(data, activity_name, host_pattern, uri_pattern, o
 
 		if data['custom_fields'][activity_name+'_req-host']:
 
-			if not host_pattern.search(data['custom_fields'][activity_name+'_req-host']):
-				# print(":::::::::::::::::::::::")
-				# print(host_pattern.search(data['custom_fields'][activity_name+'_req-host']))
-				# print(data['custom_fields'][activity_name+'_req-host'])
-				other_activities_errors[counter] = " Request host value seems to be incorrect"
-				counter +=1
+			if '|' in data['custom_fields'][activity_name+'_req-host']:
+				host_splitter = data['custom_fields'][activity_name+'_req-host'].split("|")
+
+				for host_split in host_splitter:
+					if not host_pattern.search(host_split):
+						# print(":::::::::::::::::::::::")
+						# print(host_pattern.search(data['custom_fields'][activity_name+'_req-host']))
+						# print(data['custom_fields'][activity_name+'_req-host'])
+						other_activities_errors[counter] = " Request host value seems to be incorrect"
+						counter +=1
+
+
+					if str(host_split).startswith(" "):
+						other_activities_errors[counter] =  " Request host starts with whitespace, please remove it."
+						counter +=1
+
+
+					if any(x in str(host_split).lower() for x in blacklist_words):
+						other_activities_errors[counter] = " Error: Some of the blacklisted words are present in Request host"
+						counter +=1
+					
+					check_req_host = asterik_check(r"\*",str(host_split))
+					if check_req_host == True :
+						other_activities_errors[counter] = " Error: Asterik cannot be present in between request host value, please fix it"
+						counter +=1
+
+
+
+			else:
+
+				if not host_pattern.search(data['custom_fields'][activity_name+'_req-host']):
+					# print(":::::::::::::::::::::::")
+					# print(host_pattern.search(data['custom_fields'][activity_name+'_req-host']))
+					# print(data['custom_fields'][activity_name+'_req-host'])
+					other_activities_errors[counter] = " Request host value seems to be incorrect"
+					counter +=1
+
+
+				if str(data['custom_fields'][activity_name+'_req-host']).startswith(" "):
+					other_activities_errors[counter] =  " Request host starts with whitespace, please remove it."
+					counter +=1
+
+
+				if any(x in str(data['custom_fields'][activity_name+'_req-host']).lower() for x in blacklist_words):
+					other_activities_errors[counter] = " Error: Some of the blacklisted words are present in Request host"
+					counter +=1
+
+				check_req_host = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_req-host']))
+				if check_req_host == True :
+					other_activities_errors[counter] = " Error: Asterik cannot be present in between request host value, please fix it"
+					counter +=1
+
 
 		else:
 			other_activities_errors[counter] = " Host is missing"
 			counter +=1
 
-		if uri_pattern.match(data['custom_fields'][activity_name+'_req-params']):
-			other_activities_errors[counter] = ' Params value seems to be incorrect (found same pattern as uri path)'
-			counter +=1
-
-		if  uri_pattern.match(data['custom_fields'][activity_name+'_req-headers']):
-			other_activities_errors[counter] = ' Request header value seems to be incorrect (found same pattern as uri path)'
-			counter +=1
-
-		if uri_pattern.match(data['custom_fields'][activity_name+'_req-payload']):
-			# print(data['custom_fields'][activity_name+'_req-payload'])
-			other_activities_errors[counter] = ' Request payload value seems to be incorrect (found same pattern as uri path)'
-			counter +=1
-
 		if data['custom_fields'][activity_name+'_req-uri-path']:
 
-			if not uri_pattern.match(data['custom_fields'][activity_name+'_req-uri-path']):
-				# print(data['custom_fields'][activity_name+'_req-uri-path'])
-				other_activities_errors[counter] = " Request uri path value seems to be incorrect or starting '/' is missing(add /) or have space in starting(remove space)"
-				counter +=1
-		
+			if '|' in data['custom_fields'][activity_name+'_req-uri-path']:
+				uri_splitter = data['custom_fields'][activity_name+'_req-uri-path'].split("|")
+				for uri_split in uri_splitter:
+					if not uri_pattern.match(uri_split):
+							# print(data['custom_fields'][activity_name+'_req-uri-path'])
+							other_activities_errors[counter] = " Request uri path value seems to be incorrect or starting '/' is missing(add /) or have space in starting(remove space)"
+							counter +=1
+
+					if str(uri_split).startswith(" "):
+						other_activities_errors[counter] =  " Request uri starts with whitespace, please remove it."
+						counter +=1
+
+					if any(x in str(uri_split).lower() for x in blacklist_words):
+						other_activities_errors[counter] = " Error: Some of the blacklisted words are present in Request uri"
+						counter +=1
+
+
+			else:
+				if not uri_pattern.match(data['custom_fields'][activity_name+'_req-uri-path']):
+					# print(data['custom_fields'][activity_name+'_req-uri-path'])
+					other_activities_errors[counter] = " Request uri path value seems to be incorrect or starting '/' is missing(add /) or have space in starting(remove space)"
+					counter +=1
+
+				if str(data['custom_fields'][activity_name+'_req-uri-path']).startswith(" "):
+					other_activities_errors[counter] =  " Request uri starts with whitespace, please remove it."
+					counter +=1
+
+				if any(x in str(data['custom_fields'][activity_name+'_req-uri-path']).lower() for x in blacklist_words):
+					other_activities_errors[counter] = " Error: Some of the blacklisted words are present in Request uri"
+					counter +=1
+
+		if data['custom_fields'][activity_name+'_req-params']:	
+
+			if '|' in data['custom_fields'][activity_name+'_req-params']:
+				params_splitter = data['custom_fields'][activity_name+'_req-params'].split("|")
+				for param_split in params_splitter:
+
+					if uri_pattern.match(param_split):
+							other_activities_errors[counter] = ' Params value seems to be incorrect (found same pattern as uri path)'
+							counter +=1
+
+					if any(x in str(param_split).lower() for x in blacklist_words):
+						other_activities_errors[counter] = " Error: Some of the blacklisted words are present in Request params"
+						counter +=1
+
+					if str(param_split).startswith(" "):
+						other_activities_errors[counter] =  " Request param starts with whitespace, please remove it."
+						counter +=1
+					
+					if ',' in param_split:
+						req_params_comma_splitter = param_split.split(",")
+						for req_params_comma_split in req_params_comma_splitter:
+							check_req_params = asterik_check(r"\*",str(req_params_comma_split))
+							if check_req_params == True :
+								other_activities_errors[counter] = " Error: Asterik cannot be present in between request params value, please fix it"
+								counter +=1
+
+
+					else:
+						check_req_params = asterik_check(r"\*",str(param_split))
+						if check_req_params == True :
+							other_activities_errors[counter] = " Error: Asterik cannot be present in between request params value, please fix it"
+							counter +=1
+
+
+			else:
+
+				if uri_pattern.match(data['custom_fields'][activity_name+'_req-params']):
+					other_activities_errors[counter] = ' Params value seems to be incorrect (found same pattern as uri path)'
+					counter +=1
+
+				if any(x in str(data['custom_fields'][activity_name+'_req-params']).lower() for x in blacklist_words):
+					other_activities_errors[counter] = " Error: Some of the blacklisted words are present in Request params"
+					counter +=1
+
+				if str(data['custom_fields'][activity_name+'_req-params']).startswith(" "):
+					other_activities_errors[counter] =  " Request param starts with whitespace, please remove it."
+					counter +=1
+				
+				if ',' in data['custom_fields'][activity_name+'_req-params']:
+					req_params_comma_splitter = data['custom_fields'][activity_name+'_req-params'].split(",")
+					for req_header_split in req_params_comma_splitter:
+						check_req_params = asterik_check(r"\*",str(req_header_split))
+						if check_req_params == True :
+							other_activities_errors[counter] = " Error: Asterik cannot be present in between request params value, please fix it"
+							counter +=1
+				else:
+					check_req_params = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_req-params']))
+					if check_req_params == True :
+						other_activities_errors[counter] = " Error: Asterik cannot be present in between request params value, please fix it"
+						counter +=1
+
+		if data['custom_fields'][activity_name+'_req-headers']:
+
+			if "|" in data['custom_fields'][activity_name+'_req-headers']:
+				req_head_splitter = data['custom_fields'][activity_name+'_req-headers'].split("|")
+
+				for req_head_split in req_head_splitter:
+					if  uri_pattern.match(req_head_split):
+							other_activities_errors[counter] = ' Request header value seems to be incorrect (found same pattern as uri path)'
+							counter +=1
+
+					if any(x in str(req_head_split).lower() for x in blacklist_words):
+						other_activities_errors[counter] = " Error: Some of the blacklisted words are present in Request header"
+						counter +=1
+
+					if str(req_head_split).startswith(" "):
+						other_activities_errors[counter] =  " Request header starts with whitespace, please remove it."
+						counter +=1
+					if ',' in req_head_split:
+						req_header_comma_splitter = req_head_split.split(req_head_split)
+						for req_header_comma_split in req_header_comma_splitter:
+							check_req_head = asterik_check(r"\*",str(req_header_comma_split))
+							if check_req_head == True :
+								other_activities_errors[counter] = " Error: Asterik cannot be present in between request header value, please fix it"
+								counter +=1
+
+					else:
+						check_req_head = asterik_check(r"\*",str(req_head_split))
+						if check_req_head == True :
+							other_activities_errors[counter] = " Error: Asterik cannot be present in between request header value, please fix it"
+							counter +=1
+
+			else:
+
+				if  uri_pattern.match(data['custom_fields'][activity_name+'_req-headers']):
+					other_activities_errors[counter] = ' Request header value seems to be incorrect (found same pattern as uri path)'
+					counter +=1
+
+				if any(x in str(data['custom_fields'][activity_name+'_req-headers']).lower() for x in blacklist_words):
+					other_activities_errors[counter] = " Error: Some of the blacklisted words are present in Request header"
+					counter +=1
+
+				if str(data['custom_fields'][activity_name+'_req-headers']).startswith(" "):
+					other_activities_errors[counter] =  " Request header starts with whitespace, please remove it."
+					counter +=1
+
+				if ',' in data['custom_fields'][activity_name+'_req-headers']:
+					req_header_comma_splitter =  data['custom_fields'][activity_name+'_req-headers'].split(",")
+					for req_header_comma_split in req_header_comma_splitter:
+						check_req_head = asterik_check(r"\*",str(req_header_comma_split))
+						if check_req_head == True :
+							other_activities_errors[counter] = " Error: Asterik cannot be present in between request header value, please fix it"
+							counter +=1
+				else:
+					check_req_head = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_req-headers']))
+					if check_req_head == True :
+						other_activities_errors[counter] = " Error: Asterik cannot be present in between request header value, please fix it"
+						counter +=1
+
+
+		if data['custom_fields'][activity_name+'_req-payload']:
+			if "|" in data['custom_fields'][activity_name+'_req-payload']:
+				req_pay_splitter = data['custom_fields'][activity_name+'_req-payload'].split("|")
+				
+				for req_pay_split in req_pay_splitter:
+					if uri_pattern.match(req_pay_split):
+						# print(data['custom_fields'][activity_name+'_req-payload'])
+						other_activities_errors[counter] = ' Request payload value seems to be incorrect (found same pattern as uri path)'
+						counter +=1
+					
+					if str(req_pay_split).startswith(" "):
+						other_activities_errors[counter] =  " Request payload starts with whitespace, please remove it."
+						counter +=1
+
+					if any(x in str(req_pay_split).lower() for x in blacklist_words):
+						other_activities_errors[counter] = " Error: Some of the blacklisted words are present in Request payload"
+						counter +=1
+
+					if ',' in req_pay_split:
+						req_pay_comma_splitter = req_pay_split.split(",")
+						for req_pay_comma_split in req_pay_comma_splitter:
+							check_req_pay = asterik_check(r"\*",str(req_pay_comma_split))
+							if check_req_pay == True :
+								other_activities_errors[counter] = " Error: Asterik cannot be present in between request payload value, please fix it"
+								counter +=1
+					else:
+						check_req_pay = asterik_check(r"\*",str(req_pay_split))
+						if check_req_pay == True :
+							other_activities_errors[counter] = " Error: Asterik cannot be present in between request payload value, please fix it"
+							counter +=1
+
+
+			else:
+				if uri_pattern.match(data['custom_fields'][activity_name+'_req-payload']):
+					# print(data['custom_fields'][activity_name+'_req-payload'])
+					other_activities_errors[counter] = ' Request payload value seems to be incorrect (found same pattern as uri path)'
+					counter +=1
+				
+				if str(data['custom_fields'][activity_name+'_req-payload']).startswith(" "):
+					other_activities_errors[counter] =  " Request payload starts with whitespace, please remove it."
+					counter +=1
+
+				if any(x in str(data['custom_fields'][activity_name+'_req-payload']).lower() for x in blacklist_words):
+					other_activities_errors[counter] = " Error: Some of the blacklisted words are present in Request payload"
+					counter +=1
+				if ',' in data['custom_fields'][activity_name+'_req-payload']:
+					req_header_comma_splitter = data['custom_fields'][activity_name+'_req-payload'].split(",")
+					for req_header_comma_split in req_header_comma_splitter:
+						check_req_pay = asterik_check(r"\*",str(req_header_comma_split))
+						if check_req_pay == True :
+							other_activities_errors[counter] = " Error: Asterik cannot be present in between request payload value, please fix it"
+							counter +=1
+				else:
+					check_req_pay = asterik_check(r"\*",str(data['custom_fields'][activity_name+'_req-payload']))
+					if check_req_pay == True :
+						other_activities_errors[counter] = " Error: Asterik cannot be present in between request payload value, please fix it"
+						counter +=1
+			
 
 		if data['custom_fields'][activity_name+'_response']:
 			# print(app_name)
@@ -571,6 +1106,8 @@ my_headers = {'X-Api-Key' : access_key,
 
 
 activity_methods = ['delete', 'get', 'patch', 'post', 'put', 'remaining', 'na']
+
+blacklist_words = ['eitacies', 'smitht', 'test', 'cloudee', 'baladtrade', 'balad','demo', 'fiddler']
 
 
 def validate(data):
@@ -908,17 +1445,18 @@ def validate_on_click():
 					result = validate(data)
 					if result:
 						if result != "Not_performed":
-							messagebox.showwarning(title="Errors found", message="Errors Found in your app!! please check the saved json.")
-							print("Errors found...")
+							#messagebox.showwarning(title="Errors found", message="Errors Found in your app!! please check the saved json.")
+							print("Errors Found in your app GC-"+str(gc)+" !! please check the saved json.")
 							print("Done processing...")
 							with open(single_value+'_errors.json', 'w') as outfile:
 								json.dump(result, outfile,indent=4)
 						else:
 							print("Assembla Status Error!")
 					else:		
-						messagebox.showinfo(title="No Errors", message="Congratulations, No Errors found...")
+						#messagebox.showinfo(title="No Errors", message="Congratulations, No Errors found...")
 						print("Congratulations, No Errors found...")
-						print("Done processing...")
+						
+						print("Done processing...\n")
 					# break
 				except:
 					print("Connection refused by the server..")
@@ -941,17 +1479,17 @@ def validate_on_click():
 				result = validate(data)
 				if result:
 					if result != "Not_performed":
-						messagebox.showwarning(title="Errors found", message="Errors Found in your app!! please check the saved json.")
-						print("Errors found...")
+						#messagebox.showwarning(title="Errors found", message="Errors Found in your app!! please check the saved json.")
+						print("Errors Found in your app GC-"+str(gc)+" !! please check the saved json..")
 						print("Done processing...")
 						with open(gc+'_errors.json', 'w') as outfile:
 							json.dump(result, outfile,indent=4)
 					else:
 						print("Assembla Status Error!")
 				else:		
-					messagebox.showinfo(title="No Errors", message="Congratulations, No Errors found...")
+					#messagebox.showinfo(title="No Errors", message="Congratulations, No Errors found...")
 					print("Congratulations, No Errors found...")
-					print("Done processing...")
+					print("Done processing...\n")
 				# break
 			except:
 				print("Connection refused by the server..")
@@ -968,7 +1506,7 @@ def validate_on_click():
 
 
 window = Tk()
-window.title("Validation!!")
+window.title("Validate Assembla Data")
 # Gets the requested values of the height and widht.
 windowWidth = window.winfo_reqwidth()
 windowHeight = window.winfo_reqheight()
@@ -978,16 +1516,28 @@ positionRight = int(window.winfo_screenwidth()/2 - windowWidth/2)
 positionDown = int(window.winfo_screenheight()/2 - windowHeight/2)
 
 # Positions the window in the center of the page.
+
 window.geometry("+{}+{}".format(positionRight, positionDown))
 
-lbl = Label(window, text="Please Enter the GC-code to validate the app")
-lbl.grid(column=1, row=0, padx=5, pady=5)
-txt = Entry(window,width=30)
-txt.grid(column=1, row=1,padx=5, pady=5)
+lbl = Label(window, text="Please enter GC-codes to validate your apps ", font=("Arial Bold", 12))
+lbl.grid(column=1, row=0, padx=10, pady=10)
+
+
+txt = Entry(window,width= 50)
+txt.grid(column=1, row=2,padx=10, pady=10)
 
 
 
-btn = Button(window, text="Validate", command=validate_on_click)
-btn.grid(column=1, row=2, padx=5, pady=5)
+btn = Button(window, text="          Validate          ", command=validate_on_click, font=("Arial", 10), bg='Green', fg='white')
+btn.grid(column=1, row=3, padx=10, pady=10)
+
+
+lbl2 = Label(window, text="Note: For multiple apps, use comma as a separator between GC-Codes", font=("Arial", 9), bg='light blue',foreground="Blue")
+lbl2.grid(column=1, row=4, padx=10, pady=10)
+
+
+window.bind('<Return>', lambda event=None: btn.invoke())
+window.configure(bg="light blue",relief=RAISED, cursor='gumby')
 window.mainloop()
+
 
