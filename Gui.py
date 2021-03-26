@@ -1446,7 +1446,7 @@ def validate_on_click():
 					if result:
 						if result != "Not_performed":
 							#messagebox.showwarning(title="Errors found", message="Errors Found in your app!! please check the saved json.")
-							print("Errors Found in your app GC-"+str(gc)+" !! please check the saved json.")
+							print("Errors Found in your app !! please check the saved json.")
 							print("Done processing...")
 							with open(single_value+'_errors.json', 'w') as outfile:
 								json.dump(result, outfile,indent=4)
@@ -1480,7 +1480,7 @@ def validate_on_click():
 				if result:
 					if result != "Not_performed":
 						#messagebox.showwarning(title="Errors found", message="Errors Found in your app!! please check the saved json.")
-						print("Errors Found in your app GC-"+str(gc)+" !! please check the saved json..")
+						print("Errors Found in your app !! please check the saved json..")
 						print("Done processing...")
 						with open(gc+'_errors.json', 'w') as outfile:
 							json.dump(result, outfile,indent=4)
