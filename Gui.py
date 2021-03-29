@@ -48,6 +48,7 @@ def assembla_data_to_json(input_gc, my_space, my_headers):
 	
             # get assembla data through assembla wrapper
 			assembla_data[ticket['summary']] = {  'Ticket_number': ticket_number, 'Status': ticket['status'] ,'custom_fields': ticket['custom_fields'], 'Attachments_count': len(attachments_temp), 'Attachments_list':	attachement_names }
+			# print(assembla_data)
 			return assembla_data
 
 
@@ -1182,7 +1183,7 @@ def validate(data):
 		#if app_name == 'Sitefinity Digital Experience Cloud':
 		if value['Status'] == 'Pcap Checks' or value['Status'] == 'Pcap Done' or value['Status'] == 'XML Done':
 			initial_errors = initial_validation(value, initial_errors)
-
+	
 			activity_name = 'LOGIN'
 			login_errors, activity_flag = login_and_login_fail_validation(value, activity_name, host_pattern, uri_pattern,login_errors, activity_methods)
 			activies_present.append(activity_flag)
@@ -1201,13 +1202,15 @@ def validate(data):
 			if activity_flag:
 				loginFail_file_error = attachment_names_validation(value['Attachments_list'], activity_name, value['Ticket_number'], loginFail_acitivty_count-1)
 
-
+			depth = ""
 			if login_depth_lst or loginFail_depth_lst:
+		
 				for x, y in zip(login_depth_lst, loginFail_depth_lst):
 					if x != y:
 						depth = "Failed: Incorrect depth between login and login-fail"
 					else:
 						depth = ""
+				
 
 
 			activity_name = 'LOGOUT'
@@ -1286,8 +1289,12 @@ def validate(data):
 			if len(loginFail_file_error) > 0:
 				errors_dict['LOGIN-FAIL-Filename-Error'] = loginFail_file_error
 
+
+
 			if depth:
 				errors_dict['LOGIN_LOGIN-FAIL_DEPTH'] = depth
+
+
 
 			if len(logout_errors) > 0:
 				errors_dict['LOGOUT'] =logout_errors
@@ -1412,6 +1419,7 @@ def validate(data):
 			if attachement_status:
 				errors_dict['Attachements Status'] = attachement_status
 
+
 			if len(errors_dict) > 0:
 				# print(errors_dict)
 				error_logs[app_name+" "+value['custom_fields']["_Product_id"]] = errors_dict
@@ -1475,8 +1483,9 @@ def validate_on_click():
 				#print(len(my_space.tickets()))
 				#below method call to hit the assembla api
 				data = assembla_data_to_json(gc, my_space, my_headers)
-				# print(data)
+
 				result = validate(data)
+		
 				if result:
 					if result != "Not_performed":
 						#messagebox.showwarning(title="Errors found", message="Errors Found in your app!! please check the saved json.")
@@ -1539,5 +1548,4 @@ lbl2.grid(column=1, row=4, padx=10, pady=10)
 window.bind('<Return>', lambda event=None: btn.invoke())
 window.configure(bg="light blue",relief=RAISED, cursor='gumby')
 window.mainloop()
-
 
