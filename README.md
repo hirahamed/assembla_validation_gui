@@ -75,5 +75,9 @@ Below is the list of validations it entertains:
 
 * Starting space checking.
 
-* Black listing words checking.
+* Black listing words checking ['eitacies', 'smitht', 'test', 'cloudee', 'baladtrade', 'balad','demo', 'fiddler', 'cloudcentrique', 'centrique'].
+
+* Product ID field Should be filled.
+
+* Web URL field Pattern Check (Should not (start with https or http or www) and (ends with /).
 
