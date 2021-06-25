@@ -81,10 +81,26 @@ def initial_validation(data, initial_errors):
 	if str(data['custom_fields']['username']).strip() == '' or str(data['custom_fields']['password']).strip() == '':
 		initial_errors[counter] = "Username or password cannot be empty."
 		counter += 1
+
+	if str(data['custom_fields']['_Priority']).strip() == '':
+		initial_errors[counter] = "Priority is Empty, Incorrect Apps done!! please discuss with team."
 	
 	if str(data['custom_fields']['Web URL']).strip() == '' :
 		initial_errors[counter] = "Web URL cannot be empty."
 		counter += 1
+	else:
+		if '|' in str(data['custom_fields']['Web URL']).strip():
+			pipe_split = str(data['custom_fields']['Web URL']).lower().strip().split("|")
+			for pipe in pipe_split:
+				if str(pipe).strip().lower().startswith("https://") or str(pipe).lower().strip().startswith("http://") or str(pipe).lower().strip().startswith("www") or str(pipe).lower().strip().endswith("/"):
+					initial_errors[counter] = "Web URL pattern is incorrect, please correct it."
+					counter += 1
+					break
+		else:
+			if str(data['custom_fields']['Web URL']).lower().strip().startswith("https://") or str(data['custom_fields']['Web URL']).lower().strip().startswith("http://") or str(data['custom_fields']['Web URL']).lower().strip().startswith("www") or str(data['custom_fields']['Web URL']).lower().strip().endswith("/"):
+				initial_errors[counter] = "Web URL pattern is incorrect, please correct it."
+				counter += 1
+
 
 	if not data['custom_fields']['_Product_id']:
 		initial_errors[counter] = "Product ID is missing"
@@ -596,7 +612,6 @@ def logout_validation(data, activity_name, host_pattern, uri_pattern, logout_err
 	
 	return logout_errors, activity_present
 
-
 def other_Acitivies_validation(data, activity_name, host_pattern, uri_pattern, other_activities_errors, activity_methods):
 	counter = 0 
 	activity_present = False
@@ -918,8 +933,11 @@ def multiple_methods_validation(data, activity_name, multiple_methods_error , mu
 	methods_ls = []
 	if data['custom_fields'][activity_name+'_req-method'] != 'None' and data['custom_fields'][activity_name+'_req-method'] != '' and data['custom_fields'][activity_name+'_req-method'] != 'NA' and data['custom_fields'][activity_name+'_req-method'] != 'REMAINING':
 		
+		# if not ['custom_fields'][activity_name+'_req-method'] in activity_methods:
+		# 	print("Req")
 
 		methods_ls.append(data['custom_fields'][activity_name+'_req-method'])
+
 
 		if data['custom_fields'][activity_name+'_req-method-2'] or ("|" in data['custom_fields'][activity_name+'_req-host']) or ("|" in data['custom_fields'][activity_name+'_req-uri-path']) or ("|" in data['custom_fields'][activity_name+'_req-params']) or ("|" in data['custom_fields'][activity_name+'_req-headers']) or ("|" in data['custom_fields'][activity_name+'_req-payload']):
 
@@ -1004,7 +1022,8 @@ def multiple_values_validation(data, activity_name, multiple_values_error ):
 			methods_splitter = value.split('|')
 			for methods in methods_splitter:
 				methods_ls.append(methods)
-		
+			
+			# methods_ls_len = len(methods_ls)
 			values_length.append( len(methods_ls))
 			
 		if data['custom_fields'][activity_name+'_req-host']:
@@ -1012,6 +1031,10 @@ def multiple_values_validation(data, activity_name, multiple_values_error ):
 		
 			hosts_splitter = value.split('|')
 			values_length.append(len(hosts_splitter))
+			#hosts_ls.append(hosts_splitter)
+
+			# if not (methods_ls_len == len(hosts_splitter)):
+			# 	error_check = True				
 
 		if data['custom_fields'][activity_name+'_req-uri-path']:
 			value = data['custom_fields'][activity_name+'_req-uri-path']
@@ -1019,28 +1042,45 @@ def multiple_values_validation(data, activity_name, multiple_values_error ):
 			#uri_ls.append(uri_splitter)
 			values_length.append(len(uri_splitter))
 
+
+			# if not (methods_ls_len == len(uri_splitter)):
+			# 	error_check = True
+
 		if data['custom_fields'][activity_name+'_req-params']:
 			value = data['custom_fields'][activity_name+'_req-params']
 			params_splitter = value.split('|')
 			values_length.append(len(params_splitter))
+			#params_ls.append(params_splitter)
 
+			# if not (methods_ls_len == len(params_splitter)):
+			# 	error_check = True
 
 		if data['custom_fields'][activity_name+'_req-headers']:
 			value = data['custom_fields'][activity_name+'_req-headers']
 			req_header_splitter = value.split('|')
 			values_length.append(len(req_header_splitter))
+			# req_head_ls.append(req_header_splitter)
+
+			# if not (methods_ls_len == len(req_header_splitter)):
+			# 	error_check = True
 
 		if data['custom_fields'][activity_name+'_req-payload']:
 			value = data['custom_fields'][activity_name+'_req-payload']
 			req_payload_splitter = value.split('|')
 			values_length.append(len(req_payload_splitter))
+			# req_payload_ls.append(req_payload_splitter)
+			# if not (methods_ls_len == len(req_payload_splitter)):
+			# 	error_check = True
 
 
 		if data['custom_fields'][activity_name+'_response']:
 			value = data['custom_fields'][activity_name+'_response']
 			response_splitter = value.split('|')
 			values_length.append(len(response_splitter))
-
+			#response_ls.append(len(response_splitter))
+			# if not (methods_ls_len == len(response_splitter)):
+			# 	error_check = True
+	
 
 		if len(set(values_length)) != 1:
 			check = True
@@ -1071,17 +1111,18 @@ def attachment_names_validation(attachments_names, activity_name, app_ticket, ac
 	validate_pcap = ''
 	if activity_count == 0:
 		validate_pcap = str(app_ticket)+"_"+activity_name+"-"+str(activity_count)
-		if (validate_pcap+".pcap" in attachments_names) or (validate_pcap+".PCAP" in attachments_names) or (validate_pcap+".saz" in attachments_names) or (validate_pcap+".SAZ" in attachments_names):
+		if (validate_pcap+".saz" in attachments_names) or (validate_pcap+".SAZ" in attachments_names):
 			pass
 			# lst.append("Correct fileName")
 		else:
-
+			# print(validate_pcap)
+			# print(attachments_names)
 			lst.append("Incorrect fileName")
 	elif activity_count > 0:
 		for i in range(activity_count):
 			validate_pcap = str(app_ticket)+"_"+activity_name+"-"+str(i)
 			# print(validate_pcap)
-			if (validate_pcap+".pcap" in attachments_names) or (validate_pcap+".PCAP" in attachments_names) or (validate_pcap+".saz" in attachments_names) or (validate_pcap+".SAZ" in attachments_names):
+			if (validate_pcap+".saz" in attachments_names) or (validate_pcap+".SAZ" in attachments_names):
 				# lst.append("Correct fileName")
 				pass
 			else:
@@ -1108,7 +1149,7 @@ my_headers = {'X-Api-Key' : access_key,
 
 activity_methods = ['delete', 'get', 'patch', 'post', 'put', 'remaining', 'na']
 
-blacklist_words = ['eitacies', 'smitht', 'test', 'cloudee', 'baladtrade', 'balad','demo', 'fiddler']
+blacklist_words = ['eitacies', 'smitht', 'test', 'cloudee', 'baladtrade', 'balad','demo', 'fiddler', 'cloudcentrique', 'centrique']
 
 
 def validate(data):
@@ -1548,4 +1589,3 @@ lbl2.grid(column=1, row=4, padx=10, pady=10)
 window.bind('<Return>', lambda event=None: btn.invoke())
 window.configure(bg="light blue",relief=RAISED, cursor='gumby')
 window.mainloop()
-
